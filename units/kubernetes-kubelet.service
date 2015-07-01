@@ -1,0 +1,37 @@
+#
+#   Author: Rohith
+#   Date: 2015-05-03 15:28:23 +0100 (Sun, 03 May 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Kubernetes Kubelet
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+Requires=install-kubernetes.service
+
+[Service]
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin
+EnvironmentFile=/etc/environment
+Restart=always
+RestartSec=5s
+
+ExecStartPre=-/usr/bin/chmod +x /opt/kubernetes/bin/hyperkube 
+ExecStart=/opt/kubernetes/bin/hyperkube kubelet \
+  --address=0.0.0.0 \
+  --port=10250 \
+  --hostname_override=${COREOS_PRIVATE_IPV4} \
+  --api_servers=127.0.0.1:8080 \
+  --register-node=false \
+  --allow_privileged=true \
+  --healthz_bind_address=0.0.0.0 \
+  --healthz_port=10248 \
+  --logtostderr=true \
+  --v=3
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+MachineMetadata=host=core
+Global=true

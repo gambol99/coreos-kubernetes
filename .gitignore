@@ -1,0 +1,15 @@
+#
+#   Author: Rohith
+#   Date: 2015-06-07 16:40:00 +0100 (Sun, 07 Jun 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+.vagrant
+extra_disks/
+registry/
+generated/
+resources/
+discovery.yml
+
+.credentials.yml

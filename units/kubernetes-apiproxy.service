@@ -1,0 +1,27 @@
+#
+#  Date: 2015-06-01 20:28:38 +0100 (Mon, 01 Jun 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Kubernetes API Server Proxy
+Documentation=https://github.com/vaijab/kube-apiproxy
+Requires=fleet.service
+After=fleet.service
+
+[Service]
+Restart=always
+RestartSec=5s
+
+ExecStartPre=/bin/mkdir -p /opt/bin
+ExecStartPre=/usr/bin/wget -N -q https://github.com/vaijab/kube-apiproxy/releases/download/v0.0.2/kube-apiproxy-0.0.2-linux-amd64 -O /opt/bin/kube-apiproxy
+ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-apiproxy
+ExecStart=/opt/bin/kube-apiproxy \
+  --api-port=8081 \
+  --proxy-listen=0.0.0.0:8080 \
+  --unit-name=kubernetes-api.service
+
+[X-Fleet]
+MachineMetadata=kubernetes=true
+Global=true

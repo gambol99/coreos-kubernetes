@@ -1,0 +1,42 @@
+#
+#   Author: Rohith
+#   Date: 2015-06-11 16:17:51 +0100 (Thu, 11 Jun 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Ceph Configuration
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/environment
+Restart=always
+RestartSec=10s
+TimeoutStartSec=0
+TimeoutStopSec=0
+
+ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:v1.7.1
+ExecStartPre=-/usr/bin/docker kill ceph-config
+ExecStartPre=-/bin/mkdir -p /var/lib/ceph
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
+  --rm --net=host --name=ceph-config \
+  -e HOST=${COREOS_PRIVATE_IPV4} \
+  -e ETCD_PORT=4001 \
+  -e ETCD=${COREOS_PRIVATE_IPV4} \
+  -e ETCD_PATH=/deis/store \
+  -e HOSTNAME=${HOSTNAME} \
+  -v /etc/ceph:/etc/ceph \
+  -v /opt/bin:/opt/bin \
+  gambol99/ceph-config:v1.7.1"
+
+ExecStop=-/usr/bin/docker kill ceph-config
+ExecStop=-/usr/bin/docker rm ceph-config
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+MachineMetadata=host=core
+MachineMetadata=host=bastion
+Global=true

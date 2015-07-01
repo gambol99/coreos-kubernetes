@@ -1,0 +1,29 @@
+#
+#  Date: 2015-05-03 13:04:55 +0100 (Sun, 03 May 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Kubernetes Controller Manager
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+Requires=kubernetes-api.service
+After=kubernetes-api.service
+
+[Service]
+EnvironmentFile=/etc/environment
+
+Restart=always
+RestartSec=5s
+
+ExecStartPre=/usr/bin/chmod +x /opt/kubernetes/bin/hyperkube 
+ExecStart=/opt/kubernetes/bin/hyperkube controller-manager \
+  --cluster-name=kube \
+  --pod-eviction-timeout=10s \
+  --node-startup-grace-period=30s \
+  --node-monitor-grace-period=20s \
+  --master=127.0.0.1:8080 \
+  --logtostderr=true
+
+[X-Fleet]
+MachineOf=kubernetes-api.service

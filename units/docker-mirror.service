@@ -1,0 +1,35 @@
+#
+#  Date: 2015-06-19 10:32:42 +0100 (Fri, 19 Jun 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+[Unit]
+Description=Docker registry mirror
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=300
+Restart=always
+RestartSec=10
+EnvironmentFile=/etc/environment
+
+ExecStartPre=-/usr/bin/docker kill mirror-registry
+ExecStartPre=-/usr/bin/docker rm -f mirror-registry
+ExecStartPre=-/usr/bin/docker pull registry:latest
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run --rm \
+  --name mirror-registry -p 5000:5000 \
+  -e GUNICORN_OPTS=[--preload] \
+  -e STANDALONE=false \
+  -e MIRROR_SOURCE=https://registry-1.docker.io \
+  -e MIRROR_SOURCE_INDEX=https://index.docker.io \
+  registry:latest"
+
+ExecStop=/usr/bin/docker stop mirror-registry
+ExecStopPost=-/usr/bin/docker rm mirror-registry
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+MachineMetadata=host=cache

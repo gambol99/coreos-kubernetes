@@ -1,0 +1,31 @@
+#
+#  Date: 2015-05-03 13:04:55 +0100 (Sun, 03 May 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Kubernetes Registration Service
+Documentation=https://github.com/kelseyhightower/kube-register
+Requires=fleet.service
+After=fleet.service
+
+[Service]
+Restart=always
+RestartSec=10
+
+EnvironmentFile=/etc/environment
+
+ExecStartPre=/bin/mkdir -p /opt/bin
+ExecStartPre=/bin/wget -N -q https://drone.io/github.com/gambol99/kube-register/files/kube-register.gz -O /opt/bin/kube-register.gz 
+ExecStartPre=-/bin/gunzip /opt/bin/kube-register.gz
+ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-register
+ExecStart=/opt/bin/kube-register \
+  -metadata=host=core \
+  -fleet-endpoint=unix:///var/run/fleet.sock \
+  -api-endpoint=http://127.0.0.1:8080 \
+  -healthz-port=10255 \
+  -node-labels=true
+
+[X-Fleet]
+MachineOf=kubernetes-api.service

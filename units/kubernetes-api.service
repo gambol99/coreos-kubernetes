@@ -1,0 +1,33 @@
+#
+#  Date: 2015-06-01 20:53:44 +0100 (Mon, 01 Jun 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Kubernetes API Server
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+Requires=install-kubernetes.service
+
+[Service]
+EnvironmentFile=/etc/environment
+
+Restart=always
+RestartSec=5s
+
+ExecStartPre=/usr/bin/chmod +x /opt/kubernetes/bin/hyperkube 
+ExecStart=/opt/kubernetes/bin/hyperkube apiserver \
+  --cluster-name=kube \
+  --allow_privileged=true \
+  --insecure_bind_address=0.0.0.0 \
+  --insecure_port=8081 \
+  --kubelet_https=true \
+  --secure_port=6443 \
+  --service-cluster-ip-range=10.101.1.0/16 \
+  --service-node-port-range=30000-32767 \
+  --etcd_servers=http://127.0.0.1:4001 \
+  --public_address_override=${COREOS_PRIVATE_IPV4} \
+  --logtostderr=true
+
+[X-Fleet]
+MachineMetadata=host=core

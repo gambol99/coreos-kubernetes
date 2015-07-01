@@ -1,0 +1,24 @@
+#
+#  Date: 2015-05-03 15:27:24 +0100 (Sun, 03 May 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Kubernetes Proxy
+Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+Requires=install-kubernetes.service
+
+[Service]
+EnvironmentFile=/etc/environment
+Restart=always
+RestartSec=5s
+
+ExecStart=/opt/kubernetes/bin/hyperkube proxy \
+  --master=127.0.0.1:8080 \
+  --logtostderr=true
+
+[X-Fleet]
+MachineMetadata=host=core
+MachineMetadata=host=bastion
+Global=true

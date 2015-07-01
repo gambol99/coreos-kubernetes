@@ -1,0 +1,33 @@
+#
+#  Date: 2015-06-17 11:08:24 +0100 (Wed, 17 Jun 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Vulcand HTTP Router
+
+Requires=etcd.service
+Requires=docker.service
+After=etcd.service
+After=docker.service
+
+[Service]
+TimeoutStartSec=0
+KillMode=none
+Restart=on-failure
+RestartSec=20
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill vulcand
+ExecStartPre=-/usr/bin/docker rm vulcand
+ExecStartPre=/usr/bin/docker pull quay.io/gambol99/vulcand
+ExecStart=/usr/bin/docker run \
+  --name vulcand \
+  --rm -p 8182:8182 -p 8181:8181 \
+  quay.io/gambol99/vulcand -apiInterface=0.0.0.0 -port=8181 -apiPort=8182 -endpointDialTimeout=5s --etcd=http://${COREOS_PRIVATE_IPV4}:4001
+
+ExecStop=/usr/bin/docker stop vulcand
+
+[X-Fleet]
+MachineMetadata=kubernetes=true
+Global=true
