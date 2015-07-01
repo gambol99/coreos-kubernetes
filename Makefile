@@ -72,7 +72,7 @@ cache-play:
 clean:
 	vagrant destroy -f
 	rm -f ${HOME}/.fleetctl/known_hosts
-	rm -f  ./providers/vagrant/discovery.yml
+	rm -f  ./config/discovery.yml
 	rm -rf ./extra_disks
 
 halt:

@@ -1,3 +1,5 @@
+#!/bin/bash
+cat <<-EOF >/var/lib/coreos-vagrant/vagrantfile-user-data
 #cloud-config
 #
 #   Author: Rohith
@@ -32,8 +34,8 @@ write_files:
       127.0.0.1 localhost.localdomain localhost
       ::1   localhost6.localdomain6 localhost6
 
-      {{ range $item := gets "/hosts/*" }}
-      {{ $item.Value }}    {{ $item.Key | base }}{{ end }}
+      {{ range \$item := gets "/hosts/*" }}
+      {{ \$item.Value }}    {{ \$item.Key | base }}{{ end }}
 
   - path: /etc/confd/conf.d/hosts.toml
     permissions: 0444
@@ -68,11 +70,11 @@ write_files:
       Global=true
 coreos:
   etcd:
-    addr: $private_ipv4:4001
-    peer-addr: $private_ipv4:7001 
+    addr: \$private_ipv4:4001
+    peer-addr: \$private_ipv4:7001 
     discovery: <%= @discovery %> 
   fleet:
-    public-ip: $private_ipv4
+    public-ip: \$private_ipv4
     metadata: cluster=dev,location=dev,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @fleet.map { |k,v| "#{k}=#{v}" }.join(',') %>
   flannel:
     interface: eth1
@@ -194,7 +196,7 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         TimeoutStartSec=60
-        ExecStart=/usr/bin/bash -c "while true; do /usr/bin/etcdctl set /hosts/%H $COREOS_PRIVATE_IPV4 && exit 0 || sleep 2; done"
+        ExecStart=/usr/bin/bash -c "while true; do /usr/bin/etcdctl set /hosts/%H \$COREOS_PRIVATE_IPV4 && exit 0 || sleep 2; done"
     - name: hosts-startup.service
       command: start
       content: |
@@ -234,3 +236,7 @@ coreos:
         ExecStartPre=-/usr/bin/wget -N -q https://storage.googleapis.com/kubernetes-release/release/v0.20.2/bin/linux/amd64/hyperkube -O /opt/kubernetes/bin/hyperkube
         ExecStartPre=-/usr/bin/wget -N -q https://storage.googleapis.com/kubernetes-release/release/v0.20.2/bin/linux/amd64/kubectl -O /opt/kubernetes/bin/kubectl
         ExecStart=/bin/chmod +x /opt/kubernetes/bin/hyperkube /opt/kubernetes/bin/kubectl
+
+EOF
+
+/usr/bin/chmod 0644 /var/lib/coreos-vagrant/vagrantfile-user-data

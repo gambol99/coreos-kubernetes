@@ -112,22 +112,8 @@ Vagrant.configure(2) do |config|
         override.vm.network :private_network, ip: vbox['ip']
       end
 
-      cloudinit_file_tmp = '/tmp/vagrantfile-user-data'
-      erb_tmp_file = Tempfile.new('vagrant')
-      erb_tmp_file.write(cloudinit)
-      erb_tmp_file.close
-      cloudinit_vagrant_file = '/var/lib/coreos-vagrant/vagrantfile-user-data'
-      config.vm.provision "file",
-        source: erb_tmp_file.path,
-        destination: cloudinit_file_tmp
-      
-      # step: copy cloudinit on the box (Vagrant CoreOS image will 'see' this)
-      config.vm.provision :shell,
-        :inline => "#!/bin/bash
-                    mv #{cloudinit_file_tmp} #{cloudinit_vagrant_file}
-                    chown root:root #{cloudinit_vagrant_file}
-                    chmod 644 #{cloudinit_vagrant_file}",
-        :privileged => true
+      # step: perform a fake cloudinit on the box 
+      config.vm.provision :shell, :inline => cloudinit, :privileged => true 
     end
   end
 end
