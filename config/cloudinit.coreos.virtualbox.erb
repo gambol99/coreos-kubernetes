@@ -89,7 +89,7 @@ coreos:
     <%- end -%>
   fleet:
     public-ip: \$private_ipv4
-    metadata: location=sbx,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @metadata.map { |k,v| "#{k}=#{v}" }.join(',') %>
+    metadata: location=sbx,private_ip=\$private_ipv4,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @metadata.map { |k,v| "#{k}=#{v}" }.join(',') %>
   flannel:
     interface: eth1
   update:
