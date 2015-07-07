@@ -24,7 +24,6 @@ ExecStartPre=/usr/bin/docker pull gambol99/nginx-gateway
 ExecStart=/usr/bin/docker run --rm \
   --name nginx-gateway \
   --net=host \
-  -e FLANNEL_ENABLED=true \
   gambol99/nginx-gateway
 
 [X-Fleet]

@@ -37,8 +37,9 @@ boxes:
       - name: ceph
         size: 8192
     metadata:
-       ceph_monitor: true
-       ceph_osd: true
+      ceph_monitor: true
+      ceph_osd: true
+      ceph: true
   store102.sbx.example.com:
     virtualbox:
       <<: *COREOS_STORE_BOX_DEFAULT
@@ -51,7 +52,7 @@ boxes:
     metadata:
       ceph_monitor: true
       ceph_osd: true
-
+      ceph: true
   store103.sbx.example.com:
     virtualbox:
       <<: *COREOS_STORE_BOX_DEFAULT
@@ -64,6 +65,7 @@ boxes:
     metadata:
       ceph_monitor: true
       ceph_osd: true
+      ceph: true
   store104.sbx.example.com:
     virtualbox:
       <<: *COREOS_STORE_BOX_DEFAULT
@@ -76,6 +78,7 @@ boxes:
     metadata:
       ceph_monitor: true
       ceph_osd: true
+      ceph: true
   bastion101.sbx.example.com:
     virtualbox:
       <<: *COREOS_CORE_BOX_DEFAULT
@@ -93,8 +96,6 @@ boxes:
     metadata:
       kubernetes: true
       etcd_master: true
-      role: minion
-      id: 1
   core102.sbx.example.com:
     virtualbox:
       <<: *COREOS_CORE_BOX_DEFAULT
@@ -105,8 +106,6 @@ boxes:
     metadata:
       kubernetes: true
       etcd_master: true
-      role: minion
-      id: 2
   core103.sbx.example.com:
     virtualbox:
       <<: *COREOS_CORE_BOX_DEFAULT
@@ -117,5 +116,3 @@ boxes:
     metadata:
       kubernetes: true
       etcd_master: true
-      role: minion
-      id: 3

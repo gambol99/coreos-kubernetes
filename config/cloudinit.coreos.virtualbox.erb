@@ -158,7 +158,7 @@ coreos:
         What=/dev/sdb
         Where=/var/lib/docker
         Type=ext4
-    <%- if @hostname =~ /^store/ -%>
+    <%- if @metadata['ceph'] -%>
     - name: format-storage.service
       command: start
       content: |
