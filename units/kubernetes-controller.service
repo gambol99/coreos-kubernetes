@@ -16,8 +16,8 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
-ExecStartPre=/usr/bin/chmod +x /opt/kubernetes/bin/hyperkube 
-ExecStart=/opt/kubernetes/bin/hyperkube controller-manager \
+ExecStartPre=/usr/bin/chmod +x /opt/bin/hyperkube 
+ExecStart=/opt/bin/hyperkube controller-manager \
   --cluster-name=kube \
   --pod-eviction-timeout=10s \
   --node-startup-grace-period=30s \

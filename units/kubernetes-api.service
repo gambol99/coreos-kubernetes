@@ -15,8 +15,8 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
-ExecStartPre=/usr/bin/chmod +x /opt/kubernetes/bin/hyperkube 
-ExecStart=/opt/kubernetes/bin/hyperkube apiserver \
+ExecStartPre=/usr/bin/chmod +x /opt/bin/hyperkube 
+ExecStart=/opt/bin/hyperkube apiserver \
   --cluster-name=kube \
   --allow_privileged=true \
   --insecure_bind_address=0.0.0.0 \

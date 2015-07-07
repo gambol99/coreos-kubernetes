@@ -7,6 +7,9 @@ cat <<-EOF >/var/lib/coreos-vagrant/vagrantfile-user-data
 #
 #  vim:ts=2:sw=2:et
 #
+<%-
+  cluster = @etcd_cluster.map { |name,ip| "#{name}=http://#{ip}:2380" }.join(',') 
+-%>
 
 hostname: <%= @hostname %>.<%= @domain %>
 
@@ -56,8 +59,8 @@ write_files:
     content: |
       [Unit]
       Description=Hosts Confd Service
-      Requires=etcd.service
-      After=etcd.service
+      Requires=etcd2.service
+      After=etcd2.service
       
       [Service]
       Restart=on-failure
@@ -70,21 +73,33 @@ write_files:
       Global=true
 coreos:
   etcd2:
-    discovery: <%= @discovery %>
-    advertise-client-urls: http://$private_ipv4:2379,http://$private_ipv4:4001
-    initial-advertise-peer-urls: http://$private_ipv4:2380
-    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
-    listen-peer-urls: http://$private_ipv4:2380
+    <%- if @metadata['etcd_master'].nil? -%>
+    proxy: on
+    listen_client_urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    initial_cluster: <%= cluster %>
+    <%- else -%>
+    name: <%= @hostname %>
+    advertise_client_urls: http://\$private_ipv4:2379
+    initial_advertise_peer_urls: http://\$private_ipv4:2380
+    listen_client_urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    listen_peer_urls: http://\$private_ipv4:2380
+    initial_cluster_token: k8s_etcd
+    initial_cluster: <%= cluster %>
+    initial_cluster_state: new
+    <%- end -%>
   fleet:
     public-ip: \$private_ipv4
-    metadata: cluster=dev,location=dev,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @fleet.map { |k,v| "#{k}=#{v}" }.join(',') %>
+    metadata: location=sbx,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @metadata.map { |k,v| "#{k}=#{v}" }.join(',') %>
   flannel:
     interface: eth1
   update:
     reboot-strategy: off
   units:
     - name: etcd.service
+      enable: false
+    - name: etcd2.service
       command: start
+      enable: true
     - name: fleet.service
       command: start
     - name: flanneld.service
@@ -94,10 +109,11 @@ coreos:
       - name: 50-network-config.conf
         content: |
           [Unit]
-          Requires=etcd.service
-          After=etcd.service
+          Requires=etcd2.service
+          After=etcd2.service
           [Service]
           ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{ "Network" : "10.244.0.0/16", "Backend" : { "Type" : "vxlan" } }'
+          ExecStartPost=-/usr/bin/ip link delete docker0
     <%- if ENV['DOCKER_MIRROR'] -%>
     - name: docker.service
       command: start
@@ -129,9 +145,7 @@ coreos:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ConditionFirstBoot=true
-        ExecStartPre=/usr/sbin/wipefs -f /dev/sdb
-        ExecStart=/usr/sbin/mkfs.ext4 /dev/sdb -N 3000000
+        ExecStart=/usr/bin/bash -c '/usr/sbin/blkid /dev/sdb || (/usr/sbin/wipefs -f /dev/sdb && /usr/sbin/mkfs.ext4 /dev/sdb -N 3000000)'
     - name: var-lib-docker.mount
       command: start
       content: |
@@ -153,9 +167,7 @@ coreos:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ConditionFirstBoot=true
-        ExecStartPre=-/usr/sbin/wipefs /dev/sdc
-        ExecStartPre=-/usr/sbin/mkfs.xfs /dev/sdc
+        ExecStart=/usr/bin/bash -c '/usr/sbin/blkid /dev/sdc || (/usr/sbin/wipefs -f /dev/sdc && /usr/sbin/mkfs.xfs /dev/sdc)'
         ExecStart=/bin/mkdir -p /var/lib/ceph
     - name: var-lib-ceph.mount
       command: start
@@ -188,9 +200,9 @@ coreos:
       content: |
         [Unit]
         Description=Host Presence Container
-        Requires=etcd.service
+        Requires=etcd2.service
         Requires=fleet.service
-        After=etcd.service
+        After=etcd2.service
         After=fleet.service
 
         [Service]
@@ -234,10 +246,10 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         TimeoutStartSec=300
-        ExecStartPre=-/usr/bin/mkdir -p /opt/kubernetes/bin
-        ExecStartPre=-/usr/bin/wget -N -q https://storage.googleapis.com/kubernetes-release/release/v0.20.2/bin/linux/amd64/hyperkube -O /opt/kubernetes/bin/hyperkube
-        ExecStartPre=-/usr/bin/wget -N -q https://storage.googleapis.com/kubernetes-release/release/v0.20.2/bin/linux/amd64/kubectl -O /opt/kubernetes/bin/kubectl
-        ExecStart=/bin/chmod +x /opt/kubernetes/bin/hyperkube /opt/kubernetes/bin/kubectl
+        ExecStartPre=-/usr/bin/mkdir -p /opt/bin
+        ExecStartPre=-/usr/bin/wget -N -q https://storage.googleapis.com/kubernetes-release/release/v0.20.2/bin/linux/amd64/hyperkube -O /opt/bin/hyperkube
+        ExecStartPre=-/usr/bin/wget -N -q https://storage.googleapis.com/kubernetes-release/release/v0.20.2/bin/linux/amd64/kubectl -O /opt/bin/kubectl
+        ExecStart=/bin/chmod +x /opt/bin/hyperkube /opt/bin/kubectl
 
 EOF
 

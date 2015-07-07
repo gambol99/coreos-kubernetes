@@ -15,8 +15,8 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
-ExecStartPre=/usr/bin/chmod +x /opt/kubernetes/bin/hyperkube 
-ExecStart=/opt/kubernetes/bin/hyperkube scheduler \
+ExecStartPre=/usr/bin/chmod +x /opt/bin/hyperkube 
+ExecStart=/opt/bin/hyperkube scheduler \
   --master=127.0.0.1:8080
 
 [X-Fleet]

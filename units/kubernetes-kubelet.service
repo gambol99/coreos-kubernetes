@@ -16,8 +16,8 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
-ExecStartPre=-/usr/bin/chmod +x /opt/kubernetes/bin/hyperkube 
-ExecStart=/opt/kubernetes/bin/hyperkube kubelet \
+ExecStartPre=-/usr/bin/chmod +x /opt/bin/hyperkube 
+ExecStart=/opt/bin/hyperkube kubelet \
   --address=0.0.0.0 \
   --port=10250 \
   --hostname_override=${COREOS_PRIVATE_IPV4} \

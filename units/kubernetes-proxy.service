@@ -14,7 +14,7 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
-ExecStart=/opt/kubernetes/bin/hyperkube proxy \
+ExecStart=/opt/bin/hyperkube proxy \
   --master=127.0.0.1:8080 \
   --logtostderr=true
 

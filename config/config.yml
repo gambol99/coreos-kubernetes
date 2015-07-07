@@ -26,7 +26,7 @@ default_coreos_virtualbox: &COREOS_STORE_BOX_DEFAULT
     biosbootmenu: disabled
   <<: *COREOS_BOX_DEFAULT
 
-boxes:
+boxes:  
   store101.sbx.example.com:
     virtualbox:
       <<: *COREOS_STORE_BOX_DEFAULT
@@ -36,7 +36,7 @@ boxes:
         size: 12040
       - name: ceph
         size: 8192
-    fleet:
+    metadata:
        ceph_monitor: true
        ceph_osd: true
   store102.sbx.example.com:
@@ -48,9 +48,10 @@ boxes:
         size: 12040
       - name: ceph
         size: 8192
-    fleet:
-       ceph_monitor: true
-       ceph_osd: true
+    metadata:
+      ceph_monitor: true
+      ceph_osd: true
+
   store103.sbx.example.com:
     virtualbox:
       <<: *COREOS_STORE_BOX_DEFAULT
@@ -60,9 +61,9 @@ boxes:
         size: 12040
       - name: ceph
         size: 8192
-    fleet:
-       ceph_monitor: true
-       ceph_osd: true
+    metadata:
+      ceph_monitor: true
+      ceph_osd: true
   store104.sbx.example.com:
     virtualbox:
       <<: *COREOS_STORE_BOX_DEFAULT
@@ -72,14 +73,14 @@ boxes:
         size: 12040
       - name: ceph
         size: 8192
-    fleet:
-       ceph_monitor: true
-       ceph_osd: true
+    metadata:
+      ceph_monitor: true
+      ceph_osd: true
   bastion101.sbx.example.com:
     virtualbox:
       <<: *COREOS_CORE_BOX_DEFAULT
       ip: 10.250.1.61
-    fleet:
+    metadata:
       kubernetes: true
       role: bastion
   core101.sbx.example.com:
@@ -89,8 +90,9 @@ boxes:
       disks:
       - name: docker
         size: 12040
-    fleet:
+    metadata:
       kubernetes: true
+      etcd_master: true
       role: minion
       id: 1
   core102.sbx.example.com:
@@ -100,8 +102,9 @@ boxes:
       disks:
       - name: docker
         size: 12040
-    fleet:
+    metadata:
       kubernetes: true
+      etcd_master: true
       role: minion
       id: 2
   core103.sbx.example.com:
@@ -111,7 +114,8 @@ boxes:
       disks:
       - name: docker
         size: 12040
-    fleet:
+    metadata:
       kubernetes: true
+      etcd_master: true
       role: minion
       id: 3

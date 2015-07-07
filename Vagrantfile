@@ -27,27 +27,23 @@ def boxes
 end
 
 #
-# We could be nicer here and actually check the expiration of the token
-# Note: I'm not sure if this is the best way of doing it ... so i'm open to suggestions
-#
-def discovery_token(filename = ETCD_DISCOVERY_TOKEN)
-  token = nil
-  if File.exist?(filename)
-    token = YAML.load(File.open(filename))['etcd_discovery_token']
-  else 
-    # step: we need to grab a new token
-    token = Net::HTTP.get(URI.parse('https://discovery.etcd.io/new'))
-    # step: save the token for later use -
-    File.open(filename, "w") { |fd| fd.write({ 'etcd_discovery_token' => token }.to_yaml) }
-    token
-  end
-end
-
-#
 # We use the users public key and inject into the cloudinit
 #
 def public_key
   @key ||= File.read("#{ENV['HOME']}/.ssh/id_rsa.pub")
+end
+
+def etcd_masters
+  @cluster ||= nil
+  unless @cluster
+    @cluster = {} 
+    boxes.each_pair do |fqdn, host|
+      hostname = fqdn.split('.').first
+      metadata = host['metadata'] || {}
+      @cluster[hostname] = host['virtualbox']['ip'] if metadata['etcd_master']
+    end
+  end
+  @cluster
 end
 
 def extra_disk(name, hostname)
@@ -60,10 +56,12 @@ Vagrant.configure(2) do |config|
   config.vbguest.no_install = true if Vagrant.has_plugin?('vagrant-vbguest')
 
   boxes.each_pair do |hostname, host|
-    @hostname   = hostname.split('.').first
-    @domain     = hostname.split('.')[1..20].join('.')
-    @public_key = public_key
-    vbox        = host['virtualbox']
+    @hostname     = hostname.split('.').first
+    @domain       = hostname.split('.')[1..20].join('.')
+    @public_key   = public_key
+    @etcd_cluster = etcd_masters 
+    @metadata     = host['metadata'] || {}
+    vbox          = host['virtualbox']
     
     is_coreos   = vbox['box'] =~ /^core/
     
@@ -71,13 +69,8 @@ Vagrant.configure(2) do |config|
     # Cloudinit configuration
     #
     cloudinit ||= ""
-    if is_coreos
-      # step: do we need a discovery token
-      @discovery = discovery_token
-      @fleet     = host['fleet'] || {}
-      cloudinit  = ERB.new(File.read(vbox['cloudinit']), nil, '-' ).result(binding)
-    end
-
+    cloudinit = ERB.new(File.read(vbox['cloudinit']), nil, '-' ).result(binding) if is_coreos
+    
     config.vm.define hostname do |x|
       x.vm.hostname  = hostname
       x.vm.box       = vbox['box'] 
