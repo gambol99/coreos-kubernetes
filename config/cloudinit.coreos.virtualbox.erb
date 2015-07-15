@@ -8,7 +8,7 @@ cat <<-EOF >/var/lib/coreos-vagrant/vagrantfile-user-data
 #  vim:ts=2:sw=2:et
 #
 <%-
-  cluster = @etcd_cluster.map { |name,ip| "#{name}=http://#{ip}:2380" }.join(',') 
+  cluster = @etcd_cluster.map { |name,ip| "#{name}=http://#{ip}:2380" }.join(',')
 -%>
 
 hostname: <%= @hostname %>.<%= @domain %>
@@ -61,7 +61,7 @@ write_files:
       Description=Hosts Confd Service
       Requires=etcd2.service
       After=etcd2.service
-      
+
       [Service]
       Restart=on-failure
       RestartSec=5
@@ -240,16 +240,32 @@ coreos:
       command: start
       content: |
         [Unit]
-        Description=Install kubernetes binaries
-
+        Description=Install kubernetes
         [Service]
         Type=oneshot
         RemainAfterExit=yes
         TimeoutStartSec=300
-        ExecStartPre=-/usr/bin/mkdir -p /opt/bin
-        ExecStartPre=-/usr/bin/wget -N -q https://storage.googleapis.com/kubernetes-release/release/v0.20.2/bin/linux/amd64/hyperkube -O /opt/bin/hyperkube
-        ExecStartPre=-/usr/bin/wget -N -q https://storage.googleapis.com/kubernetes-release/release/v0.20.2/bin/linux/amd64/kubectl -O /opt/bin/kubectl
-        ExecStart=/bin/chmod +x /opt/bin/hyperkube /opt/bin/kubectl
+        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.0/bin/linux/amd64/hyperkube"
+        Environment="OUTPUT_FILE=/opt/bin/hyperkube"
+        Environment="MD5SUM=ab07f4e46bcad04387ef1e6c89815b44"
+        ExecStart=/usr/bin/install -d -o root -g root -m 0700 /etc/kubernetes
+        ExecStart=/usr/bin/mkdir -p /opt/bin
+        ExecStart=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
+    - name: install-kubectl.service
+      command: start
+      content: |
+        [Unit]
+        Description=Install kubectl binary
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        TimeoutStartSec=300
+        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.0/bin/linux/amd64/kubectl"
+        Environment="OUTPUT_FILE=/opt/bin/kubectl"
+        Environment="MD5SUM=3a76af3e8e05539476b2ec305f745e6e"
+        ExecStart=/usr/bin/mkdir -p /opt/bin
+        ExecStart=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
+        ExecStart=/usr/bin/chmod +x ${OUTPUT_FILE}
 
 EOF
 
