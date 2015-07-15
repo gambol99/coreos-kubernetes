@@ -17,7 +17,7 @@ RestartSec=10
 EnvironmentFile=/etc/environment
 
 ExecStartPre=/bin/mkdir -p /opt/bin
-ExecStartPre=/bin/wget -N -q https://drone.io/github.com/gambol99/kube-register/files/kube-register.gz -O /opt/bin/kube-register.gz 
+ExecStartPre=/bin/wget -N -q https://drone.io/github.com/gambol99/kube-register/files/kube-register.gz -O /opt/bin/kube-register.gz
 ExecStartPre=-/bin/gunzip /opt/bin/kube-register.gz
 ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-register
 ExecStart=/opt/bin/kube-register \
@@ -25,6 +25,7 @@ ExecStart=/opt/bin/kube-register \
   -fleet-endpoint=unix:///var/run/fleet.sock \
   -api-endpoint=http://127.0.0.1:8080 \
   -healthz-port=10255 \
+  -api-version=v1 \
   -node-labels=true
 
 [X-Fleet]
