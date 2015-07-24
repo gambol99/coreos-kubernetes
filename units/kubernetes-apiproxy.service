@@ -5,7 +5,7 @@
 #
 
 [Unit]
-Description=Kubernetes API Server Proxy
+Description=Kubernetes API Proxy Service
 Documentation=https://github.com/vaijab/kube-apiproxy
 Requires=fleet.service
 After=fleet.service
@@ -14,14 +14,23 @@ After=fleet.service
 Restart=always
 RestartSec=5s
 
+EnvironmentFile=/etc/environment
+
 ExecStartPre=/bin/mkdir -p /opt/bin
-ExecStartPre=/usr/bin/wget -N -q https://github.com/vaijab/kube-apiproxy/releases/download/v0.0.2/kube-apiproxy-0.0.2-linux-amd64 -O /opt/bin/kube-apiproxy
-ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-apiproxy
+Environment="URL=https://github.com/vaijab/kube-apiproxy/releases/download/v0.0.2/kube-apiproxy-0.0.2-linux-amd64"
+Environment="OUTPUT_FILE=/opt/bin/kube-apiproxy"
+Environment="MD5SUM=06d0a0465524f74a682ce1de85f6b662"
+ExecStartPre=/usr/bin/mkdir -p /opt/bin
+ExecStartPre=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && \
+  [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; \
+  do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
+
 ExecStart=/opt/bin/kube-apiproxy \
-  --api-port=8081 \
   --proxy-listen=0.0.0.0:8080 \
+  --api-port=8081 \
   --unit-name=kubernetes-api.service
 
 [X-Fleet]
 MachineMetadata=kubernetes=true
 Global=true
+

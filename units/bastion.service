@@ -30,7 +30,7 @@ ExecStart=/usr/bin/docker run \
   -v /usr/bin/etcdctl:/usr/bin/etcdctl \
   -v /usr/bin/fleetctl:/usr/bin/fleetctl \
   -v /usr/bin/docker:/usr/bin/docker \
-  -v /opt/kubernetes/bin/kubectl:/usr/bin/kubectl \
+  -v /opt/bin/kubectl:/usr/bin/kubectl \
   -v /etc/systemd/system:/etc/systemd/system \
   -v /:/host \
   gambol99/bastion

@@ -1,14 +1,13 @@
 #
 #   Author: Rohith
-#   Date: 2015-07-01 13:36:09 +0100 (Wed, 01 Jul 2015)
+#   Date: 2015-06-15 16:37:47 +0100 (Mon, 15 Jun 2015)
 #
 #  vim:ts=2:sw=2:et
 #
 
 SBX_DOMAIN=sbx.example.com
-BASTION=10.250.1.203
+BASTION=10.250.1.201
 CORE_BOXES=core101 core102 core103
-CACHE_BOX=10.250.1.240
 STORE_BOXES=store101 store102 store103
 FLEETCTL=$(shell which fleetctl)
 HOSTIP=$(shell hostname -i)
@@ -22,7 +21,7 @@ compile-resources:
 	test -f resources/kubectl || /usr/bin/wget -N https://storage.googleapis.com/kubernetes-release/release/v0.18.2/bin/linux/amd64/kubectl -O resources/kubectl
 	test -f resources/embassy.gz || /usr/bin/wget -N https://drone.io/github.com/gambol99/embassy/files/embassy.gz -O resources/embassy.gz
 
-resources: 
+resources:
 	make compile-resources
 	make resources-clean
 	sudo docker run -d -p 80:80 \
@@ -33,18 +32,18 @@ resources:
 	# export RESOURCES=${HOSTIP}
 
 resources-clean:
-	@if sudo docker ps | grep -q resources; then sudo docker kill resources; fi 
-	@if sudo docker ps -a | grep -q resources; then sudo docker rm resources; fi 
+	@if sudo docker ps | grep -q resources; then sudo docker kill resources; fi
+	@if sudo docker ps -a | grep -q resources; then sudo docker rm resources; fi
 
 mirror:
-	@if sudo docker ps -a | grep -q docker-mirror; then sudo docker start docker-mirror; else make registry; fi 
+	@if sudo docker ps -a | grep -q docker-mirror; then sudo docker start docker-mirror; else make registry; fi
 	echo "place the following into you environment"
 	echo "export DOCKER_MIRROR=10.250.1.1"
 
 mirror-clean:
 	# Cleaning up the docker mirror container
-	@if sudo docker ps | grep -q docker-mirror; then sudo docker kill docker-mirror; fi 
-	@if sudo docker ps -a | grep -q docker-mirror; then sudo docker rm docker-mirror; fi 
+	@if sudo docker ps | grep -q docker-mirror; then sudo docker kill docker-mirror; fi
+	@if sudo docker ps -a | grep -q docker-mirror; then sudo docker rm docker-mirror; fi
 
 mirror-stop:
 	# Stopping the mirror
@@ -61,18 +60,17 @@ registry:
 
 cache:
 	vagrant up /cache/
-	while ! bash -c "echo > /dev/tcp/${CACHE_BOX}/22"; do sleep 0.5; done	
+	while ! bash -c "echo > /dev/tcp/${CACHE_BOX}/22"; do sleep 0.5; done
 	make cache-play
 	# Ensure you export the DOCKER_MIRROR environment var
 	# export DOCKER_MIRROR=${CACHE_BOX}
 
 cache-play:
-	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${CACHE_BOX}:4001 start units/docker-mirror.service 2>/dev/null || true; fi		
+	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${CACHE_BOX}:4001 start units/docker-mirror.service 2>/dev/null || true; fi
 
 clean:
 	vagrant destroy -f
 	rm -f ${HOME}/.fleetctl/known_hosts
-	rm -f  ./config/discovery.yml
 	rm -rf ./extra_disks
 
 halt:
@@ -82,10 +80,8 @@ halt:
 units:
 	fleetctl --strict-host-key-checking=false --tunnel ${BASTION} list-units
 
-all:
-	make sbx
-	make ceph 
-	
+all: sbx ceph
+
 sbx:
 	export VAGRANT_DEFAULT_PROVIDER=virtualbox
 	$(foreach I, $(CORE_BOXES), \
@@ -96,10 +92,9 @@ sbx:
 	make sbx-play
 
 sbx-play:
-	# @TODO need to fix the ssh keys cache on this 
 	# You can nw login into the box ssh -u core <FDQN>
 	# Or show the units: make units
-	# Note: if you dont have fleetctl on your machine, you'll need to download it from github or 
+	# Note: if you dont have fleetctl on your machine, you'll need to download it from github or
 	# ssh into the box, clone this repo and perform the below manually (which is crap!!)
 	# alias fleetctl="fleetctl --strict-host-key-checking=false --endpoint=http://${BASTION}:4001"
 	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${BASTION}:4001 start units/kube* 2>/dev/null || true; fi
@@ -107,7 +102,7 @@ sbx-play:
 sbx-clean:
 	$(foreach I, $(CORE_BOXES), \
 		vagrant destroy -f /$(I)/ ; \
-	)	
+	)
 
 ceph:
 	$(foreach I, $(STORE_BOXES), \
@@ -119,7 +114,7 @@ ceph:
 
 ceph-play:
 	@if [ -n "${FLEETCTL}" ]; then fleetctl --strict-host-key-checking=false --endpoint=http://${BASTION}:4001 start units/ceph* 2>/dev/null || true; fi
-	
+
 ceph-clean:
 	$(foreach I, $(STORE_BOXES), \
 		vagrant destroy -f /$(I)/ ; \

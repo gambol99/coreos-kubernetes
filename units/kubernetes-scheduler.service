@@ -7,6 +7,7 @@
 [Unit]
 Description=Kubernetes Scheduler
 Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+Requires=kubernetes-apiproxy.service
 After=kubernetes-api.service
 
 [Service]
@@ -15,7 +16,7 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
-ExecStartPre=/usr/bin/chmod +x /opt/bin/hyperkube 
+ExecStartPre=/usr/bin/chmod +x /opt/bin/hyperkube
 ExecStart=/opt/bin/hyperkube scheduler \
   --master=127.0.0.1:8080
 

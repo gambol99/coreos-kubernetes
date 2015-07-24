@@ -18,7 +18,7 @@ TimeoutStopSec=0
 
 ExecStartPre=-/bin/etcdctl mkdir /deis/store
 ExecStartPre=-/bin/etcdctl mkdir /deis/store/hosts
-ExecStartPre=/usr/bin/docker pull deis/store-monitor:v1.7.1
+ExecStartPre=/usr/bin/docker pull deis/store-monitor:v1.8.0
 ExecStartPre=-/usr/bin/docker kill ceph-monitor
 ExecStartPre=-/usr/bin/docker rm ceph-monitor
 ExecStartPre=-/bin/mkdir -p /var/lib/ceph
@@ -32,7 +32,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   -e HOSTNAME=${HOSTNAME} \
   -v /etc/ceph:/etc/ceph \
   -v /var/lib/ceph:/var/lib/ceph \
-  deis/store-monitor:v1.7.1"
+  deis/store-monitor:v1.8.0"
 
 [Install]
 WantedBy=multi-user.target

@@ -1,5 +1,5 @@
 #!/bin/bash
-cat <<-EOF >/var/lib/coreos-vagrant/vagrantfile-user-data
+cat <<-'EOF' >/var/lib/coreos-vagrant/vagrantfile-user-data
 #cloud-config
 #
 #   Author: Rohith
@@ -37,8 +37,8 @@ write_files:
       127.0.0.1 localhost.localdomain localhost
       ::1   localhost6.localdomain6 localhost6
 
-      {{ range \$item := gets "/hosts/*" }}
-      {{ \$item.Value }}    {{ \$item.Key | base }}{{ end }}
+      {{ range $item := gets "/hosts/*" }}
+      {{ $item.Value }}    {{ $item.Key | base }}{{ end }}
 
   - path: /etc/confd/conf.d/hosts.toml
     permissions: 0444
@@ -79,17 +79,17 @@ coreos:
     initial_cluster: <%= cluster %>
     <%- else -%>
     name: <%= @hostname %>
-    advertise_client_urls: http://\$private_ipv4:2379
-    initial_advertise_peer_urls: http://\$private_ipv4:2380
+    advertise_client_urls: http://$private_ipv4:2379
+    initial_advertise_peer_urls: http://$private_ipv4:2380
     listen_client_urls: http://0.0.0.0:2379,http://0.0.0.0:4001
-    listen_peer_urls: http://\$private_ipv4:2380
+    listen_peer_urls: http://$private_ipv4:2380
     initial_cluster_token: k8s_etcd
     initial_cluster: <%= cluster %>
     initial_cluster_state: new
     <%- end -%>
   fleet:
-    public-ip: \$private_ipv4
-    metadata: location=sbx,private_ip=\$private_ipv4,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @metadata.map { |k,v| "#{k}=#{v}" }.join(',') %>
+    public-ip: $private_ipv4
+    metadata: location=sbx,private_ip=$private_ipv4,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @metadata.map { |k,v| "#{k}=#{v}" }.join(',') %>
   flannel:
     interface: eth1
   update:
@@ -114,25 +114,28 @@ coreos:
           [Service]
           ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{ "Network" : "10.244.0.0/16", "Backend" : { "Type" : "vxlan" } }'
           ExecStartPost=-/usr/bin/ip link delete docker0
-    <%- if ENV['DOCKER_MIRROR'] -%>
     - name: docker.service
       command: start
       drop-ins:
-        - name: 51-docker-mirror.conf
+        - name: flanneld-dependancy.conf
           content: |
             [Unit]
             Requires=flanneld.service
             After=flanneld.service
             [Service]
-            Environment=DOCKER_OPTS='--registry-mirror=http://<%= ENV['DOCKER_MIRROR'] %>:5000'
-    <%- end -%>
+            Environment="DOCKER_NOOP=true"
+      <%- if ENV['DOCKER_MIRROR'] -%>
+        - name: 51-docker-mirror.conf
+          content: |
+            [Service]
+            Environment="DOCKER_OPTS='--registry-mirror=http://<%= ENV['DOCKER_MIRROR'] %>:5000'"
+      <%- end -%>
     - name: inject-ssh-key.service
       command: start
       content: |
         [Unit]
         Description=Injecting the public key
 
-        # there is almost certainly a better way of doing this, but i can't be asked to google it
         [Service]
         Type=oneshot
         RemainAfterExit=yes
@@ -191,26 +194,26 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         TimeoutStartSec=300
-
-        ExecStartPre=-/usr/bin/mkdir -p /opt/bin /etc/confd/conf.d /etc/confd/templates
-        ExecStartPre=-/bin/wget -N -q https://github.com/kelseyhightower/confd/releases/download/v0.9.0/confd-0.9.0-linux-amd64 -O /opt/bin/confd
-        ExecStart=/bin/chmod +x /opt/bin/confd
+        ExecStartPre=/usr/bin/mkdir -p /opt/bin /etc/confd/conf.d /etc/confd/templates
+        Environment="URL=https://github.com/kelseyhightower/confd/releases/download/v0.9.0/confd-0.9.0-linux-amd64"
+        Environment="OUTPUT_FILE=/opt/bin/confd"
+        Environment="MD5SUM=008298b40143bc71581a84d854d154a6"
+        ExecStart=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
+        ExecStart=/usr/bin/chmod +x ${OUTPUT_FILE}
     - name: host-presence.service
       command: start
       content: |
         [Unit]
         Description=Host Presence Container
         Requires=etcd2.service
-        Requires=fleet.service
         After=etcd2.service
-        After=fleet.service
 
         [Service]
         EnvironmentFile=/etc/environment
         Type=oneshot
         RemainAfterExit=yes
         TimeoutStartSec=60
-        ExecStart=/usr/bin/bash -c "while true; do /usr/bin/etcdctl set /hosts/%H \$COREOS_PRIVATE_IPV4 && exit 0 || sleep 2; done"
+        ExecStart=/usr/bin/bash -c "while true; do /usr/bin/etcdctl set /hosts/%H ${COREOS_PRIVATE_IPV4} && exit 0 || sleep 2; done"
     - name: hosts-startup.service
       command: start
       content: |
@@ -236,6 +239,8 @@ coreos:
         ExecStart=/usr/bin/timedatectl set-timezone UTC
         RemainAfterExit=yes
         Type=oneshot
+    - name: ntpd.service
+      command: start
     - name: install-kubernetes.service
       command: start
       content: |
@@ -245,12 +250,13 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         TimeoutStartSec=300
-        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.0/bin/linux/amd64/hyperkube"
+        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.1/bin/linux/amd64/hyperkube"
         Environment="OUTPUT_FILE=/opt/bin/hyperkube"
-        Environment="MD5SUM=ab07f4e46bcad04387ef1e6c89815b44"
+        Environment="MD5SUM=7ed6771de55ef14769048253bbbd8d39"
         ExecStart=/usr/bin/install -d -o root -g root -m 0700 /etc/kubernetes
         ExecStart=/usr/bin/mkdir -p /opt/bin
         ExecStart=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
+        ExecStart=/usr/bin/chmod +x ${OUTPUT_FILE}
     - name: install-kubectl.service
       command: start
       content: |
@@ -260,13 +266,12 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         TimeoutStartSec=300
-        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.0/bin/linux/amd64/kubectl"
+        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.1/bin/linux/amd64/kubectl"
         Environment="OUTPUT_FILE=/opt/bin/kubectl"
-        Environment="MD5SUM=3a76af3e8e05539476b2ec305f745e6e"
+        Environment="MD5SUM=d55f69a79a01477ec8d0ab0584a91355"
         ExecStart=/usr/bin/mkdir -p /opt/bin
         ExecStart=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
         ExecStart=/usr/bin/chmod +x ${OUTPUT_FILE}
-
 EOF
 
 /usr/bin/chmod 0644 /var/lib/coreos-vagrant/vagrantfile-user-data

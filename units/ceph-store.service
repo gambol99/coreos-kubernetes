@@ -22,7 +22,7 @@ ExecStartPre=-/bin/etcdctl mkdir /deis/store/osds
 ExecStartPre=-/usr/bin/docker kill ceph-store
 ExecStartPre=-/usr/bin/docker rm ceph-store
 ExecStartPre=-/bin/mkdir -p /var/lib/ceph
-ExecStartPre=/usr/bin/docker pull deis/store-daemon:v1.7.1
+ExecStartPre=/usr/bin/docker pull deis/store-daemon:v1.8.0
 ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   --net=host --name=ceph-store --privileged \
   -e HOST=${COREOS_PRIVATE_IPV4} \
@@ -33,7 +33,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   -v /etc/ceph:/etc/ceph \
   -v /var/lib/ceph/osd:/var/lib/ceph/osd \
   -v /dev:/dev \
-  deis/store-daemon:v1.7.1"
+  deis/store-daemon:v1.8.0"
 
 ExecStop=/usr/bin/docker kill ceph-store
 
@@ -41,5 +41,5 @@ ExecStop=/usr/bin/docker kill ceph-store
 WantedBy=multi-user.target
 
 [X-Fleet]
-MachineMetadata=ceph_osd=true
+MachineMetadata=ceph_store=true
 Global=true

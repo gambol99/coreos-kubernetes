@@ -16,12 +16,17 @@ RestartSec=10
 
 EnvironmentFile=/etc/environment
 
+Environment="URL=https://drone.io/github.com/gambol99/kube-register/files/kube-register.gz"
+Environment="OUTPUT_FILE=/opt/bin/kube-register"
+Environment="GZ_FILE=/opt/bin/kube-register.gz"
+Environment="MD5SUM=e3634bc3a1d412fdd72b39e5282c5f5c"
 ExecStartPre=/bin/mkdir -p /opt/bin
-ExecStartPre=/bin/wget -N -q https://drone.io/github.com/gambol99/kube-register/files/kube-register.gz -O /opt/bin/kube-register.gz
-ExecStartPre=-/bin/gunzip /opt/bin/kube-register.gz
-ExecStartPre=/usr/bin/chmod +x /opt/bin/kube-register
+ExecStartPre=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && \
+  [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; \
+  do wget -O ${GZ_FILE} ${URL} && /bin/gunzip ${GZ_FILE} -f && \
+  chmod +x ${OUTPUT_FILE}; done'
 ExecStart=/opt/bin/kube-register \
-  -metadata=host=core \
+  -metadata=kubernetes=true \
   -fleet-endpoint=unix:///var/run/fleet.sock \
   -api-endpoint=http://127.0.0.1:8080 \
   -healthz-port=10255 \

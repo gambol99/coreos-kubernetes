@@ -8,6 +8,8 @@
 Description=Kubernetes API Server
 Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 Requires=install-kubernetes.service
+After=install-kubernetes.service
+After=docker-mirror.service
 
 [Service]
 EnvironmentFile=/etc/environment
@@ -15,19 +17,17 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
-ExecStartPre=/usr/bin/chmod +x /opt/bin/hyperkube 
+ExecStartPre=/usr/bin/chmod +x /opt/bin/hyperkube
 ExecStart=/opt/bin/hyperkube apiserver \
-  --cluster-name=kube \
   --allow_privileged=true \
-  --insecure_bind_address=0.0.0.0 \
-  --insecure_port=8081 \
-  --kubelet_https=true \
-  --secure_port=6443 \
-  --service-cluster-ip-range=10.101.1.0/16 \
-  --service-node-port-range=30000-32767 \
+  --insecure-bind-address=0.0.0.0 \
+  --insecure-port=8081 \
+  --kubelet-https=true \
+  --secure-port=6443 \
+  --portal_net=10.101.1.0/16 \
   --etcd_servers=http://127.0.0.1:4001 \
   --public_address_override=${COREOS_PRIVATE_IPV4} \
   --logtostderr=true
 
 [X-Fleet]
-MachineMetadata=host=core
+MachineMetadata=kubernetes=true

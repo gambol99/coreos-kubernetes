@@ -16,9 +16,9 @@ RestartSec=10s
 TimeoutStartSec=0
 TimeoutStopSec=0
 
-ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:v1.7.1
+ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:v1.8.0
 ExecStartPre=-/usr/bin/docker kill ceph-config
-ExecStartPre=-/bin/mkdir -p /var/lib/ceph
+ExecStartPre=/bin/mkdir -p /var/lib/ceph
 ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   --rm --net=host --name=ceph-config \
   -e HOST=${COREOS_PRIVATE_IPV4} \
@@ -28,7 +28,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   -e HOSTNAME=${HOSTNAME} \
   -v /etc/ceph:/etc/ceph \
   -v /opt/bin:/opt/bin \
-  gambol99/ceph-config:v1.7.1"
+  gambol99/ceph-config:v1.8.0"
 
 ExecStop=-/usr/bin/docker kill ceph-config
 ExecStop=-/usr/bin/docker rm ceph-config
@@ -37,6 +37,5 @@ ExecStop=-/usr/bin/docker rm ceph-config
 WantedBy=multi-user.target
 
 [X-Fleet]
-MachineMetadata=host=core
-MachineMetadata=host=bastion
+MachineMetadata=kubernetes=true
 Global=true

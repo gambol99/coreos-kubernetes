@@ -9,6 +9,9 @@
 Description=Kubernetes Kubelet
 Documentation=https://github.com/GoogleCloudPlatform/kubernetes
 Requires=install-kubernetes.service
+Requires=kubernetes-apiproxy.service
+After=install-kubernetes.service
+After=kubernetes-apiproxy.service
 
 [Service]
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin
@@ -16,22 +19,24 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
-ExecStartPre=-/usr/bin/chmod +x /opt/bin/hyperkube 
+ExecStartPre=-/usr/bin/chmod +x /opt/bin/hyperkube
 ExecStart=/opt/bin/hyperkube kubelet \
   --address=0.0.0.0 \
   --port=10250 \
   --hostname_override=${COREOS_PRIVATE_IPV4} \
   --api_servers=127.0.0.1:8080 \
-  --register-node=false \
   --allow_privileged=true \
   --healthz_bind_address=0.0.0.0 \
+  --host-network-sources=* \
   --healthz_port=10248 \
   --logtostderr=true \
+  --config=/etc/kubernetes/manifests \
+  --register-node=false \
   --v=3
 
 [Install]
 WantedBy=multi-user.target
 
 [X-Fleet]
-MachineMetadata=host=core
 Global=true
+MachineMetadata=kubernetes=true

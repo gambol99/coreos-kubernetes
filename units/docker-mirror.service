@@ -32,4 +32,4 @@ ExecStopPost=-/usr/bin/docker rm mirror-registry
 WantedBy=multi-user.target
 
 [X-Fleet]
-MachineMetadata=host=cache
+MachineMetadata=cache=true

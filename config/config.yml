@@ -9,24 +9,24 @@
 default_coreos: &COREOS_BOX_DEFAULT
   box: "coreos-beta"
   url: "http://beta.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json"
-  cloudinit: 'config/cloudinit.coreos.virtualbox.erb'
+  cloudinit: 'config/cloudinit.virtualbox.erb'
   gui: false
 
 default_coreos_virtualbox: &COREOS_CORE_BOX_DEFAULT
   resources:
-    cpus: 1
-    memory: 2048
+    cpus: 2
+    memory: 1024
     biosbootmenu: disabled
   <<: *COREOS_BOX_DEFAULT
 
 default_coreos_virtualbox: &COREOS_STORE_BOX_DEFAULT
   resources:
     cpus: 1
-    memory: 1024
+    memory: 512
     biosbootmenu: disabled
   <<: *COREOS_BOX_DEFAULT
 
-boxes:  
+boxes:
   store101.sbx.example.com:
     virtualbox:
       <<: *COREOS_STORE_BOX_DEFAULT
@@ -35,10 +35,10 @@ boxes:
       - name: docker
         size: 12040
       - name: ceph
-        size: 8192
+        size: 24576
     metadata:
       ceph_monitor: true
-      ceph_osd: true
+      ceph_store: true
       ceph: true
   store102.sbx.example.com:
     virtualbox:
@@ -48,10 +48,10 @@ boxes:
       - name: docker
         size: 12040
       - name: ceph
-        size: 8192
+        size: 24576
     metadata:
       ceph_monitor: true
-      ceph_osd: true
+      ceph_store: true
       ceph: true
   store103.sbx.example.com:
     virtualbox:
@@ -61,10 +61,10 @@ boxes:
       - name: docker
         size: 12040
       - name: ceph
-        size: 8192
+        size: 24576
     metadata:
       ceph_monitor: true
-      ceph_osd: true
+      ceph_store: true
       ceph: true
   store104.sbx.example.com:
     virtualbox:
@@ -74,10 +74,36 @@ boxes:
       - name: docker
         size: 12040
       - name: ceph
-        size: 8192
+        size: 24576
     metadata:
       ceph_monitor: true
-      ceph_osd: true
+      ceph_store: true
+      ceph: true
+  store105.sbx.example.com:
+    virtualbox:
+      <<: *COREOS_STORE_BOX_DEFAULT
+      ip: 10.250.1.55
+      disks:
+      - name: docker
+        size: 12040
+      - name: ceph
+        size: 24576
+    metadata:
+      ceph_monitor: true
+      ceph_store: true
+      ceph: true
+  store106.sbx.example.com:
+    virtualbox:
+      <<: *COREOS_STORE_BOX_DEFAULT
+      ip: 10.250.1.56
+      disks:
+      - name: docker
+        size: 12040
+      - name: ceph
+        size: 24576
+    metadata:
+      ceph_monitor: true
+      ceph_store: true
       ceph: true
   bastion101.sbx.example.com:
     virtualbox:
@@ -89,7 +115,7 @@ boxes:
   core101.sbx.example.com:
     virtualbox:
       <<: *COREOS_CORE_BOX_DEFAULT
-      ip: 10.250.1.203
+      ip: 10.250.1.201
       disks:
       - name: docker
         size: 12040
@@ -99,7 +125,7 @@ boxes:
   core102.sbx.example.com:
     virtualbox:
       <<: *COREOS_CORE_BOX_DEFAULT
-      ip: 10.250.1.204
+      ip: 10.250.1.202
       disks:
       - name: docker
         size: 12040
@@ -109,7 +135,7 @@ boxes:
   core103.sbx.example.com:
     virtualbox:
       <<: *COREOS_CORE_BOX_DEFAULT
-      ip: 10.250.1.205
+      ip: 10.250.1.203
       disks:
       - name: docker
         size: 12040

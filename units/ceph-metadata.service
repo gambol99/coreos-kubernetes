@@ -5,6 +5,7 @@
 #  vim:ts=2:sw=2:et
 #
 
+
 [Unit]
 Description=Ceph Metadata Service
 After=docker.service
@@ -18,7 +19,7 @@ TimeoutStopSec=0
 
 ExecStartPre=-/usr/bin/docker kill ceph-metadata
 ExecStartPre=-/bin/mkdir -p /var/lib/ceph
-ExecStartPre=/usr/bin/docker pull deis/store-metadata:v1.7.1
+ExecStartPre=/usr/bin/docker pull deis/store-metadata:v1.8.0
 ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   --rm --net=host --name=ceph-metadata \
   -e HOST=${COREOS_PRIVATE_IPV4} \
@@ -28,7 +29,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   -e HOSTNAME=${HOSTNAME} \
   -v /etc/ceph:/etc/ceph \
   -v /var/lib/ceph:/var/lib/ceph \
-  deis/store-metadata:v1.7.1"
+  deis/store-metadata:v1.8.0"
 
 ExecStop=/usr/bin/docker kill ceph-metadata
 
