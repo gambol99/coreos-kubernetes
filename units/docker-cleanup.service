@@ -1,0 +1,35 @@
+#
+#   Author: Rohith
+#   Date: 2015-06-11 16:17:45 +0100 (Thu, 11 Jun 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Docker Cleamup Service
+Requires=etcd2.service
+Requires=docker.service
+After=etcd2.service
+After=docker.service
+
+[Service]
+TimeoutStartSec=0
+KillMode=none
+Restart=on-failure
+RestartSec=20
+EnvironmentFile=/etc/environment
+ExecStartPre=-/usr/bin/docker kill tutum/cleanup
+ExecStartPre=-/usr/bin/docker rm tutum/cleanup
+ExecStartPre=/usr/bin/docker pull tutum/cleanup
+ExecStart=/usr/bin/docker run --rm \
+  --name docker-clean --privileged=true \
+  -v /var/run:/var/run:rw \
+  -v /var/lib/docker:/var/lib/docker:rw \
+  -e IMAGE_CLEAN_INTERVAL=1 \
+  -e IMAGE_CLEAN_DELAYED=1800 \
+  -e VOLUME_CLEAN_INTERVAL=1800 \
+  tutum/cleanup
+
+[X-Fleet]
+MachineMetadata=kubernetes=true
+Global=true

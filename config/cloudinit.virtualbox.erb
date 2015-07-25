@@ -71,6 +71,32 @@ write_files:
 
       [X-Fleet]
       Global=true
+  - path: /etc/kubernetes/manifests/exporter.manifest
+    permissions: 0444
+    content: |
+      #
+      #   Author: Rohith
+      #   Date: 2015-07-20 13:35:37 +0100 (Mon, 20 Jul 2015)
+      #
+      #  vim:ts=2:sw=2:et
+      #
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: <%= @hostname %>ex
+        labels:
+          hostname: <%= @hostname %>
+          name: <%= @hostname %>ex
+        annotations:
+          metrics: |
+            - name: exporter
+              port: 9100
+      spec:
+        containers:
+        - name: node-exporter
+          image: prom/node-exporter
+          ports:
+          - containerPort: 9100
 coreos:
   etcd2:
     <%- if @metadata['etcd_master'].nil? -%>
@@ -89,7 +115,7 @@ coreos:
     <%- end -%>
   fleet:
     public-ip: $private_ipv4
-    metadata: location=sbx,private_ip=$private_ipv4,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @metadata.map { |k,v| "#{k}=#{v}" }.join(',') %>
+    metadata: cluster=sbx,private_ip=$private_ipv4,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @metadata.map { |k,v| "#{k}=#{v}" }.join(',') %>
   flannel:
     interface: eth1
   update:
@@ -102,6 +128,28 @@ coreos:
       enable: true
     - name: fleet.service
       command: start
+    - name: format-ephemeral.service
+      command: start
+      content: |
+        [Unit]
+        Description=Formats the ephemeral drive
+        Before=docker.service
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/bash -c '/usr/sbin/blkid /dev/sdb || (/usr/sbin/wipefs -f /dev/sdb && /usr/sbin/mkfs.ext4 /dev/sdb -N 3000000)'
+    - name: var-lib-docker.mount
+      command: start
+      content: |
+        [Unit]
+        Description=Mount ephemeral to /var/lib/docker
+        Requires=format-ephemeral.service
+        After=format-ephemeral.service
+        Before=docker.service
+        [Mount]
+        What=/dev/sdb
+        Where=/var/lib/docker
+        Type=ext4
     - name: flanneld.service
       command: start
       enable: true
@@ -140,27 +188,6 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         ExecStart=/usr/bin/bash -c "/usr/bin/cat /run/public.key >> /home/core/.ssh/authorized_keys"
-    - name: format-ephemeral.service
-      command: start
-      content: |
-        [Unit]
-        Description=Formats the ephemeral drive
-        [Service]
-        Type=oneshot
-        RemainAfterExit=yes
-        ExecStart=/usr/bin/bash -c '/usr/sbin/blkid /dev/sdb || (/usr/sbin/wipefs -f /dev/sdb && /usr/sbin/mkfs.ext4 /dev/sdb -N 3000000)'
-    - name: var-lib-docker.mount
-      command: start
-      content: |
-        [Unit]
-        Description=Mount ephemeral to /var/lib/docker
-        Requires=format-ephemeral.service
-        After=format-ephemeral.service
-        Before=docker.service
-        [Mount]
-        What=/dev/sdb
-        Where=/var/lib/docker
-        Type=ext4
     <%- if @metadata['ceph'] -%>
     - name: format-storage.service
       command: start

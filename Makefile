@@ -56,7 +56,7 @@ registry:
     -e MIRROR_SOURCE=https://registry-1.docker.io \
     -e MIRROR_SOURCE_INDEX=https://index.docker.io \
    	-v ${PWD}/registry:/tmp/registry \
-    registry:latest
+    registry
 
 cache:
 	vagrant up /cache/
@@ -98,7 +98,7 @@ sbx-play:
 	# ssh into the box, clone this repo and perform the below manually (which is crap!!)
 	# alias fleetctl="fleetctl --strict-host-key-checking=false --endpoint=http://${BASTION}:4001"
 	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${BASTION}:4001 start units/kube* 2>/dev/null || true; fi
-
+	
 sbx-clean:
 	$(foreach I, $(CORE_BOXES), \
 		vagrant destroy -f /$(I)/ ; \

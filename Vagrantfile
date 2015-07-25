@@ -14,7 +14,6 @@ require 'fileutils'
 
 VAGRANT_DEFAULT_PROVIDER = :virtualbox
 EXTRA_DISKS              = "./extra_disks"
-ETCD_DISCOVERY_TOKEN     = "./config/discovery.yml"
 ENVIRONMENT_CONFIG       = "./config/config.yml"
 
 def config
@@ -36,7 +35,7 @@ end
 def etcd_masters
   @cluster ||= nil
   unless @cluster
-    @cluster = {} 
+    @cluster = {}
     boxes.each_pair do |fqdn, host|
       hostname = fqdn.split('.').first
       metadata = host['metadata'] || {}
@@ -49,7 +48,7 @@ end
 def extra_disk(name, hostname)
   FileUtils.mkdir_p('./extra_disks') unless File.exist?(EXTRA_DISKS)
   "#{EXTRA_DISKS}/#{name}-#{hostname}.vdi"
-end 
+end
 
 Vagrant.configure(2) do |config|
   # Disable the VB Guest plugin, it doesn't work with Core OS
@@ -59,22 +58,22 @@ Vagrant.configure(2) do |config|
     @hostname     = hostname.split('.').first
     @domain       = hostname.split('.')[1..20].join('.')
     @public_key   = public_key
-    @etcd_cluster = etcd_masters 
+    @etcd_cluster = etcd_masters
     @metadata     = host['metadata'] || {}
     vbox          = host['virtualbox']
-    
+
     is_coreos   = vbox['box'] =~ /^core/
-    
+
     #
     # Cloudinit configuration
     #
     cloudinit ||= ""
     cloudinit = ERB.new(File.read(vbox['cloudinit']), nil, '-' ).result(binding) if is_coreos
-    
+
     config.vm.define hostname do |x|
       x.vm.hostname  = hostname
-      x.vm.box       = vbox['box'] 
-      x.vm.box_url   = vbox['url'] if vbox['url'] 
+      x.vm.box       = vbox['box']
+      x.vm.box_url   = vbox['url'] if vbox['url']
 
       #
       # Virtualbox related configuration
@@ -82,17 +81,16 @@ Vagrant.configure(2) do |config|
       x.vm.provider :virtualbox do |virtualbox,override|
         virtualbox.gui   = vbox['gui'] || false
         virtualbox.name  = hostname
-        
+
         #
         # Extra disks and storage
-        # 
+        #
         ( vbox['disks'] || [] ).each_with_index do |disk,index|
           disk_filename = extra_disk(disk['name'], hostname)
           unless File.exist?(disk_filename)
             virtualbox.customize ['createhd', '--filename', disk_filename, '--size', disk['size'] ]
-            virtualbox.customize [ 'storageattach', :id, 
-              '--storagectl', 'IDE Controller', '--port', 1, '--device', index, 
-              '--type', 'hdd', '--medium', disk_filename ]
+            virtualbox.customize [ 'storageattach', :id,
+              '--storagectl', 'IDE Controller', '--port', 1, '--device', index, '--type', 'hdd', '--medium', disk_filename ]
           end
         end
 
@@ -105,8 +103,8 @@ Vagrant.configure(2) do |config|
         override.vm.network :private_network, ip: vbox['ip']
       end
 
-      # step: perform a fake cloudinit on the box 
-      config.vm.provision :shell, :inline => cloudinit, :privileged => true 
+      # step: perform a fake cloudinit on the box
+      config.vm.provision :shell, :inline => cloudinit, :privileged => true
     end
   end
 end
