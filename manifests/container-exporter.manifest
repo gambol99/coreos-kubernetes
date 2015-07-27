@@ -1,0 +1,36 @@
+$TEMPLATE$
+#
+#   Author: Rohith
+#   Date: 2015-07-27 10:57:21 +0100 (Mon, 27 Jul 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ getenv "COREOS_PRIVATE_IPV4" }}-container
+  labels:
+    hostname: {{ getenv "COREOS_PRIVATE_IPV4" }}
+    name: {{ getenv "COREOS_PRIVATE_IPV4" }}-container
+  annotations:
+    metrics: |
+      - name: container-exporter
+        port: 9104
+spec:
+  containers:
+  - name: container-exporter
+    image: prom/container-exporterw
+    ports:
+    - containerPort: 9104
+    volumeMounts:
+    - mountPath: /sys/fs/cgroup
+      name: cgroup
+    - mountPath: /var/run/docker.sock
+      name: docker
+  volumes:
+  - name: cgroup
+    hostPath:
+      path: /sys/fs/cgroup
+  - name: docker
+    hostPath:
+      path: /var/run/docker.sock

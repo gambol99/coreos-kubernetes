@@ -71,32 +71,7 @@ write_files:
 
       [X-Fleet]
       Global=true
-  - path: /etc/kubernetes/manifests/exporter.manifest
-    permissions: 0444
-    content: |
-      #
-      #   Author: Rohith
-      #   Date: 2015-07-20 13:35:37 +0100 (Mon, 20 Jul 2015)
-      #
-      #  vim:ts=2:sw=2:et
-      #
-      apiVersion: v1
-      kind: Pod
-      metadata:
-        name: <%= @hostname %>ex
-        labels:
-          hostname: <%= @hostname %>
-          name: <%= @hostname %>ex
-        annotations:
-          metrics: |
-            - name: exporter
-              port: 9100
-      spec:
-        containers:
-        - name: node-exporter
-          image: prom/node-exporter
-          ports:
-          - containerPort: 9100
+
 coreos:
   etcd2:
     <%- if @metadata['etcd_master'].nil? -%>

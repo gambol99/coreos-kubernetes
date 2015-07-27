@@ -1,0 +1,38 @@
+#
+#   Author: Rohith
+#   Date: 2015-07-27 10:36:32 +0100 (Mon, 27 Jul 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+Unit]
+Description=Kubernetes Manifests Service
+Documentation=https://github.com/kelseyhightower/kube-register
+Requires=etcd2.service
+After=etcd2.service
+
+[Service]
+Restart=always
+RestartSec=10
+
+EnvironmentFile=/etc/environment
+Environment="URL=https://drone.io/github.com/gambol99/config-fs/files/config-fs.gz"
+Environment="OUTPUT_FILE=/opt/bin/config-fs"
+Environment="GZ_FILE=/opt/bin/config-fs.gz"
+Environment="MD5SUM=e96e67b3026304f75154adad8fdc84ab"
+ExecStartPre=/bin/mkdir -p /opt/bin
+ExecStartPre=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && \
+  [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; \
+  do wget -O ${GZ_FILE} ${URL} && /bin/gunzip ${GZ_FILE} -f && \
+  chmod +x ${OUTPUT_FILE}; done'
+
+ExecStart=/opt/bin/config-fs \
+  -root=/manifests \
+  -mount=/etc/kubernetes \
+  -store=etcd://127.0.0.1:4001 \
+  -delete_stale=true \
+  -logtostderr=true -v=3 \
+
+[X-Fleet]
+MachineMetadata=kubernetes=true
+Global=true

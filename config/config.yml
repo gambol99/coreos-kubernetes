@@ -105,6 +105,15 @@ boxes:
       ceph_monitor: true
       ceph_store: true
       ceph: true
+  proxy101.sbx.example.com:
+    virtualbox:
+      <<: *COREOS_STORE_BOX_DEFAULT
+      ip: 10.250.1.31
+      disks:
+      - name: docker
+        size: 12040
+    metadata:
+      app_proxy: true
   bastion101.sbx.example.com:
     virtualbox:
       <<: *COREOS_CORE_BOX_DEFAULT

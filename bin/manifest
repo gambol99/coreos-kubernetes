@@ -1,0 +1,55 @@
+#!/bin/bash
+#
+#   Author: Rohith
+#   Date: 2015-07-27 12:03:42 +0100 (Mon, 27 Jul 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+ETCDCTL=$(which etcdctl)
+DEFAULT_ETCD="10.250.1.201:4001"
+DEFAULT_ROOT="/manifests"
+
+usage() {
+  cat <<EOF
+  Usage: $(basename $0) -m FILENAME
+  -m|--manifest FILENAME      the file containing the manifest
+  -H|--host HOST:PORT         the etcd host to push the configuration into (defaults $DEFAULT_ETCD)
+  -r|--root key               the etcd root to push the file content (default ${DEFAULT_ROOT})
+  -h|--help                   display this usage menu
+EOF
+  if [ ! -n "$@" ]; then
+    echo "[error] $@"
+    exit 1
+  fi
+  exit 0
+}
+
+[ -z "${ETCDCTL}" ] && usage "unable to find the ectdctl command line in path"
+
+# step: get the command line options
+while [ $# -ne 0 ]; do
+  case "$1" in
+    -m|--manifest)  MANIFEST=$2;  shift 2 ;;
+    -H|--host)      ETCD_HOST=$2; shift 2 ;;
+    -r|--root)      ETCD_ROOT=$2; shift 2 ;;
+    -h|--help)      usage                 ;;
+    *)                            shift 1 ;;
+  esac
+done
+
+# step: set the defaults
+ETCD_HOST=${ETCD_HOST:-"$DEFAULT_ETCD"}
+ETCD_ROOT=${ETCD_ROOT:-"$DEFAULT_ROOT"}
+
+[ -z "${MANIFEST}" ] && usage "you have not specified manifest to upload"
+[ -e "${MANIFEST}" ] || usage "the manifest file: ${MANIFEST} does not exist"
+[ -f "${MANIFEST}" ] || usage "the manifest file: ${MANIFEST} is not a file"
+
+FILENAME=$(basename ${MANIFEST})
+KEY="${ETCD_ROOT}/${FILENAME}"
+
+echo "Uploading the manfiest: ${FILENAME}, path: ${MANIFEST}, key: ${KEY}, host: ${ETCD_HOST}"
+$ETCDCTL --peers=${ETCD_HOST} set ${KEY} "$(cat ${MANIFEST})"
+[ $? -ne 0 ] && usage "unable to push the manifest into etcd" 
+

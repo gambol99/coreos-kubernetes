@@ -9,7 +9,9 @@ SBX_DOMAIN=sbx.example.com
 BASTION=10.250.1.201
 CORE_BOXES=core101 core102 core103
 STORE_BOXES=store101 store102 store103
+MANIFESTS=$(shell ls manifests)
 FLEETCTL=$(shell which fleetctl)
+ETCDCTL=$(shell which etcdctl)
 HOSTIP=$(shell hostname -i)
 
 .PHONY: build sbx sbx-play ceph ceph-play units mirror mirror-clean mirror-stop registry compile-resources resources resources-clean
@@ -90,6 +92,7 @@ sbx:
 	# waiting for the boxes to come up
 	while ! bash -c "echo > /dev/tcp/${BASTION}/22"; do sleep 0.5; done
 	make sbx-play
+	make manifests-play
 
 sbx-play:
 	# You can nw login into the box ssh -u core <FDQN>
@@ -98,10 +101,15 @@ sbx-play:
 	# ssh into the box, clone this repo and perform the below manually (which is crap!!)
 	# alias fleetctl="fleetctl --strict-host-key-checking=false --endpoint=http://${BASTION}:4001"
 	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${BASTION}:4001 start units/kube* 2>/dev/null || true; fi
-	
+
 sbx-clean:
 	$(foreach I, $(CORE_BOXES), \
 		vagrant destroy -f /$(I)/ ; \
+	)
+
+manifests-play:
+	$(foreach I, $(MANIFESTS), \
+		bin/manifest -m manifests/$(I) >/dev/null 2>&1 || true; \
 	)
 
 ceph:

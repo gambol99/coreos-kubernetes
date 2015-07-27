@@ -1,0 +1,24 @@
+$TEMPLATE$
+#
+#   Author: Rohith
+#   Date: 2015-07-27 10:57:21 +0100 (Mon, 27 Jul 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ getenv "COREOS_PRIVATE_IPV4" }}-node
+  labels:
+    hostname: {{ getenv "COREOS_PRIVATE_IPV4" }}
+    name: {{ getenv "COREOS_PRIVATE_IPV4" }}-node
+  annotations:
+    metrics: |
+      - name: node-exporter
+        port: 9100
+spec:
+  containers:
+  - name: node-exporter
+    image: prom/node-exporter
+    ports:
+    - containerPort: 9100
