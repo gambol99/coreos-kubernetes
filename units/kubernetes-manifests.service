@@ -25,14 +25,12 @@ ExecStartPre=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && \
   [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; \
   do wget -O ${GZ_FILE} ${URL} && /bin/gunzip ${GZ_FILE} -f && \
   chmod +x ${OUTPUT_FILE}; done'
-
-ExecStart=/opt/bin/config-fs \
-  -root=/manifests \
+ExecStartPre=-/usr/bin/etcdctl mkdir /manifests
+ExecStart=/opt/bin/config-fs -root=/manifests \
   -mount=/etc/kubernetes \
   -store=etcd://127.0.0.1:4001 \
   -delete_stale=true \
   -logtostderr=true -v=3 \
 
 [X-Fleet]
-MachineMetadata=kubernetes=true
 Global=true

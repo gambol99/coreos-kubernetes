@@ -19,7 +19,7 @@ metadata:
 spec:
   containers:
   - name: container-exporter
-    image: prom/container-exporterw
+    image: prom/container-exporter
     ports:
     - containerPort: 9104
     volumeMounts:

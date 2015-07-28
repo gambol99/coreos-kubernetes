@@ -1,4 +1,3 @@
-$TEMPLATE$
 #
 #   Author: Rohith
 #   Date: 2015-07-27 10:57:21 +0100 (Mon, 27 Jul 2015)
@@ -8,10 +7,9 @@ $TEMPLATE$
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ getenv "COREOS_PRIVATE_IPV4" }}-node
+  name: exporter
   labels:
-    hostname: {{ getenv "COREOS_PRIVATE_IPV4" }}
-    name: {{ getenv "COREOS_PRIVATE_IPV4" }}-node
+    name: exporter
   annotations:
     metrics: |
       - name: node-exporter
@@ -22,3 +20,4 @@ spec:
     image: prom/node-exporter
     ports:
     - containerPort: 9100
+  hostNetwork: true
