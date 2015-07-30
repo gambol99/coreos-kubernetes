@@ -16,19 +16,23 @@ RestartSec=10s
 TimeoutStartSec=0
 TimeoutStopSec=0
 
-ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:v1.8.0
+ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:v1.8.2
 ExecStartPre=-/usr/bin/docker kill ceph-config
 ExecStartPre=/bin/mkdir -p /var/lib/ceph
 ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
-  --rm --net=host --name=ceph-config \
+  --rm --net=host --privileged --name=ceph-config \
   -e HOST=${COREOS_PRIVATE_IPV4} \
   -e ETCD_PORT=4001 \
   -e ETCD=${COREOS_PRIVATE_IPV4} \
   -e ETCD_PATH=/deis/store \
   -e HOSTNAME=${HOSTNAME} \
   -v /etc/ceph:/etc/ceph \
+  -v /var/lib/ceph:/var/lib/ceph \
+  -v /proc:/host/proc \
+  -v /dev:/dev \
+  -v /sys:/sys \
   -v /opt/bin:/opt/bin \
-  gambol99/ceph-config:v1.8.0"
+  gambol99/ceph-config:v1.8.2"
 
 ExecStop=-/usr/bin/docker kill ceph-config
 ExecStop=-/usr/bin/docker rm ceph-config
