@@ -16,6 +16,8 @@ HOSTIP=$(shell hostname -i)
 
 .PHONY: build sbx sbx-play ceph ceph-play units mirror mirror-clean mirror-stop registry compile-resources resources resources-clean
 
+default: sbx
+
 compile-resources:
 	mkdir -p ./resources
 	test -f resources/confd-0.9.0-linux-amd64 || /usr/bin/wget -N https://github.com/kelseyhightower/confd/releases/download/v0.9.0/confd-0.9.0-linux-amd64 -O resources/confd-0.9.0-linux-amd64
