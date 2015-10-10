@@ -1,0 +1,32 @@
+
+[Unit]
+Description=Ceph RBD Client
+Requires=docker.service
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/environment
+Restart=always
+RestartSec=10s
+TimeoutStartSec=0
+TimeoutStopSec=0
+
+ExecStartPre=/usr/bin/docker pull gambol99/store-client:0.0.1
+ExecStop=-/usr/bin/docker rm ceph-client
+ExecStartPre=-/usr/bin/docker run --name ceph-client --rm -v /opt/bin:/opt/bin gambol99/store-client:0.0.1 sync
+ExecStart=/usr/bin/docker run --name ceph-client \
+  --rm --net=host \
+  -e ETCD=http://127.0.0.1:2379 \
+  -v /etc/ceph:/etc/ceph \
+  -v /opt/bin:/opt/bin \
+  gambol99/store-client:0.0.1 wait
+
+ExecStop=-/usr/bin/docker kill ceph-client
+ExecStop=-/usr/bin/docker rm ceph-client
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+MachineMetadata=kubernetes=true
+Global=true

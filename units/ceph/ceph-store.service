@@ -1,0 +1,41 @@
+
+[Unit]
+Description=Ceph OSD Service
+Requires=fleet.service
+Requires=docker.service
+After=docker.service
+After=fleet.service
+
+[Service]
+EnvironmentFile=/etc/environment
+Restart=always
+RestartSec=10s
+TimeoutStartSec=0
+TimeoutStopSec=0
+
+ExecStartPre=-/bin/etcdctl -C http://127.0.0.1:2379 mkdir /deis/store
+ExecStartPre=-/bin/etcdctl -C http://127.0.0.1:2379 mkdir /deis/store/osds
+ExecStartPre=-/usr/bin/docker kill ceph-store
+ExecStartPre=-/usr/bin/docker rm ceph-store
+ExecStartPre=/usr/bin/docker pull gambol99/store-daemon:0.0.1
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run --rm \
+  --net=host --name=ceph-store --privileged \
+  -e HOST=${COREOS_PRIVATE_IPV4} \
+  -e HOSTNAME=${HOSTNAME} \
+  -e ETCD=http://127.0.0.1:2379 \
+  -e ETCD_PATH=/deis/store \
+  -e OSD_ROOT=\"root=default datacenter=sbx" \
+  -v /etc/ceph:/etc/ceph \
+  -v /var/lib/ceph/osd:/var/lib/ceph/osd \
+  -v /var/lib/ceph/journal:/var/lib/ceph/journal \
+  -v /dev:/dev \
+  gambol99/store-daemon:0.0.1"
+
+#-e OSD_JOURNAL_ROOT=/var/lib/ceph/journal \
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+MachineMetadata=ceph_store=true
+Global=true

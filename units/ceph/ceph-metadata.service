@@ -1,0 +1,33 @@
+
+[Unit]
+Description=Ceph MetaData Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/environment
+Restart=always
+RestartSec=10s
+TimeoutStartSec=0
+TimeoutStopSec=0
+
+ExecStartPre=-/usr/bin/docker kill ceph-metadata
+ExecStartPre=-/usr/bin/docker rm ceph-metadata
+ExecStartPre=/usr/bin/docker pull gambol99/store-metadata:0.0.1
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run --rm \
+  --net=host --name=ceph-metadata --privileged \
+  -e HOST=${COREOS_PRIVATE_IPV4} \
+  -e HOSTNAME=${HOSTNAME} \
+  -e ETCD=http://127.0.0.1:2379 \
+  -e ETCD_PATH=/deis/store \
+  -v /etc/ceph:/etc/ceph \
+  -v /var/lib/ceph/mds:/var/lib/ceph/mds \
+  -v /dev:/dev \
+  gambol99/store-metadata:0.0.1"
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+Global=true
+MachineMetadata=ceph_monitor=true

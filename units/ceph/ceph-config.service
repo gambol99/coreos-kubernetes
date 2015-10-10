@@ -1,12 +1,7 @@
-#
-#   Author: Rohith
-#   Date: 2015-06-11 16:17:51 +0100 (Thu, 11 Jun 2015)
-#
-#  vim:ts=2:sw=2:et
-#
 
 [Unit]
 Description=Ceph Configuration
+Requires=docker.service
 After=docker.service
 
 [Service]
@@ -16,23 +11,21 @@ RestartSec=10s
 TimeoutStartSec=0
 TimeoutStopSec=0
 
-ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:v1.8.3
+ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:develop
 ExecStartPre=-/usr/bin/docker kill ceph-config
-ExecStartPre=/bin/mkdir -p /var/lib/ceph
 ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   --rm --net=host --privileged --name=ceph-config \
-  -e HOST=${COREOS_PRIVATE_IPV4} \
-  -e ETCD_PORT=4001 \
-  -e ETCD=${COREOS_PRIVATE_IPV4} \
+  -e ETCD=https://127.0.0.1:2379 \
   -e ETCD_PATH=/deis/store \
+  -e HOST=${COREOS_PRIVATE_IPV4} \
   -e HOSTNAME=${HOSTNAME} \
-  -v /etc/ceph:/etc/ceph \
+  -v /etc/ceph:/etc/ceph:ro \
   -v /var/lib/ceph:/var/lib/ceph \
   -v /proc:/host/proc \
   -v /dev:/dev \
   -v /sys:/sys \
   -v /opt/bin:/opt/bin \
-  gambol99/ceph-config:v1.8.3"
+  gambol99/ceph-config:develop"
 
 ExecStop=-/usr/bin/docker kill ceph-config
 ExecStop=-/usr/bin/docker rm ceph-config
@@ -41,5 +34,5 @@ ExecStop=-/usr/bin/docker rm ceph-config
 WantedBy=multi-user.target
 
 [X-Fleet]
-MachineMetadata=kubernetes=true
+MachineMetadata=ceph_monitor=true
 Global=true

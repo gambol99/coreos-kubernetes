@@ -1,0 +1,33 @@
+
+[Unit]
+Description=Ceph Manager
+Requires=docker.service
+After=docker.service
+
+[Service]
+EnvironmentFile=/etc/environment
+Restart=always
+RestartSec=10s
+TimeoutStartSec=0
+TimeoutStopSec=0
+
+ExecStartPre=/usr/bin/docker pull gambol99/store-manager:0.0.1
+ExecStartPre=/bin/mkdir -p /var/lib/ceph
+ExecStartPre=-/usr/bin/docker kill ceph-manager
+ExecStart=/usr/bin/docker run \
+  --rm --net=host --privileged --name=ceph-manager \
+  -v /etc/ceph:/etc/ceph:ro \
+  gambol99/store-manager:0.0.1 \
+  -interval=60s \
+  -logtostderr=true \
+  -env=dev \
+  -v=4
+
+ExecStop=-/usr/bin/docker kill ceph-manager
+ExecStop=-/usr/bin/docker rm ceph-manager
+
+[Install]
+WantedBy=multi-user.target
+
+[X-Fleet]
+MachineMetadata=role=ceph_monitor

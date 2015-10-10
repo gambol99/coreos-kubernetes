@@ -68,7 +68,7 @@ cache:
 	# export DOCKER_MIRROR=${CACHE_BOX}
 
 cache-play:
-	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${CACHE_BOX}:4001 start units/docker-mirror.service 2>/dev/null || true; fi
+	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${CACHE_BOX}:4001 start units/misc/docker-mirror.service 2>/dev/null || true; fi
 
 clean:
 	vagrant destroy -f
@@ -102,7 +102,7 @@ sbx-play:
 	# Note: if you dont have fleetctl on your machine, you'll need to download it from github or
 	# ssh into the box, clone this repo and perform the below manually (which is crap!!)
 	# alias fleetctl="fleetctl --strict-host-key-checking=false --endpoint=http://${BASTION}:4001"
-	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${BASTION}:4001 start units/kube* 2>/dev/null || true; fi
+	@if [ -n "${FLEETCTL}" ]; then fleetctl --endpoint=http://${BASTION}:4001 start units/kubernetes/kube* 2>/dev/null || true; fi
 
 sbx-clean:
 	$(foreach I, $(CORE_BOXES), \
@@ -123,7 +123,7 @@ ceph:
 	make ceph-play
 
 ceph-play:
-	@if [ -n "${FLEETCTL}" ]; then fleetctl --strict-host-key-checking=false --endpoint=http://${BASTION}:4001 start units/ceph* 2>/dev/null || true; fi
+	@if [ -n "${FLEETCTL}" ]; then fleetctl --strict-host-key-checking=false --endpoint=http://${BASTION}:4001 start units/ceph/ceph* 2>/dev/null || true; fi
 
 ceph-clean:
 	$(foreach I, $(STORE_BOXES), \
