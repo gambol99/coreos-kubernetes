@@ -16,7 +16,7 @@ RestartSec=10s
 TimeoutStartSec=0
 TimeoutStopSec=0
 
-ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:v1.8.2
+ExecStartPre=/usr/bin/docker pull gambol99/ceph-config:v1.8.3
 ExecStartPre=-/usr/bin/docker kill ceph-config
 ExecStartPre=/bin/mkdir -p /var/lib/ceph
 ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
@@ -32,7 +32,7 @@ ExecStart=/usr/bin/bash -c "/usr/bin/docker run \
   -v /dev:/dev \
   -v /sys:/sys \
   -v /opt/bin:/opt/bin \
-  gambol99/ceph-config:v1.8.2"
+  gambol99/ceph-config:v1.8.3"
 
 ExecStop=-/usr/bin/docker kill ceph-config
 ExecStop=-/usr/bin/docker rm ceph-config

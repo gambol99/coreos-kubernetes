@@ -17,17 +17,19 @@ EnvironmentFile=/etc/environment
 Restart=always
 RestartSec=5s
 
+ExecStartPre=/usr/bin/bash -c "/usr/bin/echo 'NJDUDSKFDDJISWPFDS,sbx,sbx' > /etc/kubernetes/tokens.csv"
 ExecStartPre=/usr/bin/chmod +x /opt/bin/hyperkube
 ExecStart=/opt/bin/hyperkube apiserver \
-  --allow_privileged=true \
-  --insecure-bind-address=0.0.0.0 \
-  --insecure-port=8081 \
-  --kubelet-https=true \
+  --allow-privileged=true \
+  --insecure-port=8080 \
+  --advertise-address=${COREOS_PRIVATE_IPV4} \
   --secure-port=6443 \
-  --portal_net=10.101.1.0/16 \
-  --etcd_servers=http://127.0.0.1:4001 \
-  --public_address_override=${COREOS_PRIVATE_IPV4} \
+  --admission-control=NamespaceLifecycle,NamespaceExists,LimitRanger,SecurityContextDeny,ResourceQuota \
+  --token-auth-file=/etc/kubernetes/tokens.csv \
+  --service-cluster-ip-range=10.200.0.0/16 \
+  --etcd-servers=http://127.0.0.1:2379 \
   --logtostderr=true
 
 [X-Fleet]
+Global=true
 MachineMetadata=kubernetes=true

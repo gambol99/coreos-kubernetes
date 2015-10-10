@@ -85,14 +85,16 @@ units:
 all: sbx ceph
 
 sbx:
-	export VAGRANT_DEFAULT_PROVIDER=virtualbox
 	$(foreach I, $(CORE_BOXES), \
 		vagrant up /$(I)/ ; \
 	)
+	make kubernetes
+
+kubernetes:
 	# waiting for the boxes to come up
 	while ! bash -c "echo > /dev/tcp/${BASTION}/22"; do sleep 0.5; done
 	make sbx-play
-	make manifests-play
+#	make manifests-play
 
 sbx-play:
 	# You can nw login into the box ssh -u core <FDQN>

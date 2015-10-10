@@ -5,6 +5,8 @@
 #  vim:ts=2:sw=2:et
 #
 
+TODO
+ca/
 .vagrant
 extra_disks/
 registry/

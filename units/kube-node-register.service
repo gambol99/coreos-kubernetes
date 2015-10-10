@@ -1,0 +1,36 @@
+#
+#   Author: Rohith
+#   Date: 2015-08-05 15:16:15 +0100 (Wed, 05 Aug 2015)
+#
+#  vim:ts=2:sw=2:et
+#
+
+[Unit]
+Description=Node Registration Service
+Documentation=http://github.com/gambol99/node-register
+Requires=fleet.service
+After=fleet.service
+
+[Service]
+EnvironmentFile=/etc/environment
+Restart=on-failure
+RestartSec=5
+
+ExecStartPre=/usr/bin/docker pull gambol99/node-register:v0.0.4
+ExecStartPre=-/usr/bin/docker stop node-register
+ExecStartPre=-/usr/bin/docker rm node-register
+ExecStart=/usr/bin/bash -c "/usr/bin/docker run --rm \
+  --net=host --name=node-register \
+  -v /var/run/fleet.sock:/var/run/fleet.sock \
+  gambol99/node-register:v0.0.4 \
+  -api=http://127.0.0.1:8080 \
+  -fleet=unix://var/run/fleet.sock \
+  -insecure=true \
+  -interface=eth0 \
+  -interval=30s \
+  -metadata=kubernetes=true \
+  -logtostderr=true \
+  -v=3"
+
+[X-Fleet]
+MachineMetadata=kubernetes=true

@@ -62,13 +62,10 @@ Vagrant.configure(2) do |config|
     @metadata     = host['metadata'] || {}
     vbox          = host['virtualbox']
 
-    is_coreos   = vbox['box'] =~ /^core/
-
     #
     # Cloudinit configuration
     #
-    cloudinit ||= ""
-    cloudinit = ERB.new(File.read(vbox['cloudinit']), nil, '-' ).result(binding) if is_coreos
+    cloudinit = ERB.new(File.read(vbox['cloudinit']), nil, '-' ).result(binding)
 
     config.vm.define hostname do |x|
       x.vm.hostname  = hostname

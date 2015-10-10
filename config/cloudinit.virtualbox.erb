@@ -93,16 +93,40 @@ coreos:
     metadata: cluster=sbx,private_ip=$private_ipv4,host=<%= @hostname.gsub(/[0-9]*/,'') %>,<%= @metadata.map { |k,v| "#{k}=#{v}" }.join(',') %>
   flannel:
     interface: eth1
+    etcd_endpoints: http://127.0.0.1:2379
+  locksmith:
+    endpoint: http://127.0.0.1:2379
   update:
     reboot-strategy: off
   units:
-    - name: etcd.service
-      enable: false
     - name: etcd2.service
       command: start
       enable: true
+    - name: docker.service
+      drop-ins:
+      - name: flanneld_noop.conf
+        content: |
+          [Unit]
+          After=flanneld.service
+          Requires=flanneld.service
+    <%- if ENV['DOCKER_MIRROR'] -%>
+      - name: 51-docker-mirror.conf
+        content: |
+          [Service]
+          Environment="DOCKER_OPTS='--registry-mirror=http://<%= ENV['DOCKER_MIRROR'] %>:5000'"
+    <%- end -%>
     - name: fleet.service
       command: start
+      enable: true
+      drop-ins:
+      # TODO remove below once fixed, see https://github.com/coreos/fleet/issues/1329
+      - name: 10-dependencies.conf
+        content: |
+          [Unit]
+          After=etcd2.service
+          Wants=fleet.socket
+          After=fleet.socket
+          Requires=etcd2.service
     - name: format-ephemeral.service
       command: start
       content: |
@@ -131,28 +155,13 @@ coreos:
       drop-ins:
       - name: 50-network-config.conf
         content: |
-          [Unit]
-          Requires=etcd2.service
-          After=etcd2.service
           [Service]
-          ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{ "Network" : "10.244.0.0/16", "Backend" : { "Type" : "vxlan" } }'
-          ExecStartPost=-/usr/bin/ip link delete docker0
-    - name: docker.service
-      command: start
-      drop-ins:
-        - name: flanneld-dependancy.conf
-          content: |
-            [Unit]
-            Requires=flanneld.service
-            After=flanneld.service
-            [Service]
-            Environment="DOCKER_NOOP=true"
-      <%- if ENV['DOCKER_MIRROR'] -%>
-        - name: 51-docker-mirror.conf
-          content: |
-            [Service]
-            Environment="DOCKER_OPTS='--registry-mirror=http://<%= ENV['DOCKER_MIRROR'] %>:5000'"
-      <%- end -%>
+          ExecStartPre=/usr/bin/etcdctl --peers http://127.0.0.1:2379 set /coreos.com/network/config '{"Network":"10.10.0.0/16","Backend":{"Type":"vxlan"}}'
+      # See https://github.com/coreos/flannel/issues/162
+      - name: 10-env-config.conf
+        content: |
+          [Service]
+          EnvironmentFile=/run/flannel/options.env
     - name: inject-ssh-key.service
       command: start
       content: |
@@ -186,51 +195,6 @@ coreos:
         Where=/var/lib/ceph
         Type=xfs
     <%- end -%>
-    - name: install-confd.service
-      command: start
-      content: |
-        [Unit]
-        Description=Install the confd binary
-
-        [Service]
-        Type=oneshot
-        RemainAfterExit=yes
-        TimeoutStartSec=300
-        ExecStartPre=/usr/bin/mkdir -p /opt/bin /etc/confd/conf.d /etc/confd/templates
-        Environment="URL=https://github.com/kelseyhightower/confd/releases/download/v0.9.0/confd-0.9.0-linux-amd64"
-        Environment="OUTPUT_FILE=/opt/bin/confd"
-        Environment="MD5SUM=008298b40143bc71581a84d854d154a6"
-        ExecStart=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
-        ExecStart=/usr/bin/chmod +x ${OUTPUT_FILE}
-    - name: host-presence.service
-      command: start
-      content: |
-        [Unit]
-        Description=Host Presence Container
-        Requires=etcd2.service
-        After=etcd2.service
-
-        [Service]
-        EnvironmentFile=/etc/environment
-        Type=oneshot
-        RemainAfterExit=yes
-        TimeoutStartSec=60
-        ExecStart=/usr/bin/bash -c "while true; do /usr/bin/etcdctl set /hosts/%H ${COREOS_PRIVATE_IPV4} && exit 0 || sleep 2; done"
-    - name: hosts-startup.service
-      command: start
-      content: |
-        [Unit]
-        Description=Hosts Service Startup
-        Requires=fleet.service
-        Requires=install-confd.service
-        After=fleet.service
-        After=install-confd.service
-
-        [Service]
-        Type=oneshot
-        RemainAfterExit=yes
-        TimeoutStartSec=300
-        ExecStart=/usr/bin/bash -c "while true; do /usr/bin/fleetctl start /run/hosts-etc.service && exit 0 || sleep 2; done"
     - name: settimezone.service
       command: start
       content: |
@@ -252,25 +216,10 @@ coreos:
         Type=oneshot
         RemainAfterExit=yes
         TimeoutStartSec=300
-        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.1/bin/linux/amd64/hyperkube"
+        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.6/bin/linux/amd64/hyperkube"
         Environment="OUTPUT_FILE=/opt/bin/hyperkube"
-        Environment="MD5SUM=7ed6771de55ef14769048253bbbd8d39"
+        Environment="MD5SUM=86f6ec34e71c7d9db5f896bca3a69634"
         ExecStart=/usr/bin/install -d -o root -g root -m 0700 /etc/kubernetes
-        ExecStart=/usr/bin/mkdir -p /opt/bin
-        ExecStart=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
-        ExecStart=/usr/bin/chmod +x ${OUTPUT_FILE}
-    - name: install-kubectl.service
-      command: start
-      content: |
-        [Unit]
-        Description=Install kubectl binary
-        [Service]
-        Type=oneshot
-        RemainAfterExit=yes
-        TimeoutStartSec=300
-        Environment="URL=https://storage.googleapis.com/kubernetes-release/release/v1.0.1/bin/linux/amd64/kubectl"
-        Environment="OUTPUT_FILE=/opt/bin/kubectl"
-        Environment="MD5SUM=d55f69a79a01477ec8d0ab0584a91355"
         ExecStart=/usr/bin/mkdir -p /opt/bin
         ExecStart=/usr/bin/bash -c 'until [[ -x ${OUTPUT_FILE} ]] && [[ $(md5sum ${OUTPUT_FILE} | cut -f1 -d" ") == ${MD5SUM} ]]; do wget -O ${OUTPUT_FILE} ${URL} && chmod +x ${OUTPUT_FILE}; done'
         ExecStart=/usr/bin/chmod +x ${OUTPUT_FILE}

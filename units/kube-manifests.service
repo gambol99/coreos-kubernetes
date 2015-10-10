@@ -33,4 +33,5 @@ ExecStart=/opt/bin/config-fs -root=/manifests \
   -logtostderr=true -v=3 \
 
 [X-Fleet]
+MachineMetadata=kubernetes=true
 Global=true
